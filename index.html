@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>傘忘れ防止アプリ</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1em;
+      max-width: 500px;
+      margin: auto;
+      background: #f7f9fc;
+    }
+    input, button {
+      width: 100%;
+      font-size: 1.2em;
+      padding: 0.7em;
+      margin-top: 1em;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+    }
+    h2 {
+      font-size: 1.6em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h2>☂️ 傘忘れ防止アプリ</h2>
+
+  <label>
+    傘を置いた場所:
+    <input type="text" id="location" placeholder="例：駅のロッカー">
+  </label>
+
+  <label>
+    通知する時刻を選んでください:
+    <input type="time" id="reminderTime">
+  </label>
+
+  <button id="setReminder">傘を置いた！</button>
+  <p id="status"></p>
+
+  <script>
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+
+    document.getElementById("setReminder").addEventListener("click", () => {
+      const location = document.getElementById("location").value || "不明な場所";
+      const timeInput = document.getElementById("reminderTime").value;
+
+      if (!timeInput) {
+        alert("通知する時刻を選んでください。");
+        return;
+      }
+
+      const [hour, minute] = timeInput.split(":").map(Number);
+      const now = new Date();
+      const targetTime = new Date();
+      targetTime.setHours(hour, minute, 0, 0);
+
+      if (targetTime <= now) {
+        targetTime.setDate(targetTime.getDate() + 1); // 翌日に設定
+      }
+
+      const delayMs = targetTime - now;
+
+      // 保存
+      localStorage.setItem("umbrellaLocation", location);
+      localStorage.setItem("reminderTime", targetTime.toISOString());
+
+      // ステータス表示
+      const timeStr = targetTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+      document.getElementById("status").textContent =
+        `${timeStr} に通知します。`;
+
+      // タイマー開始
+      setTimeout(() => {
+        new Notification("傘、忘れてない？", {
+          body: `「${location}」に傘を置いてますよ！`,
+        });
+      }, delayMs);
+    });
+  </script>
+</body>
+</html>
